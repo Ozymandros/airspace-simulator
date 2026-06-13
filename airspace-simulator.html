@@ -73,10 +73,11 @@ import * as YUKA from 'yuka';
 // ---------------------------------------------------------------- constants
 const BOX_SIZE = 200;
 const HALF = BOX_SIZE / 2;
-const AIRCRAFT_COUNT = 15;
+const AIRCRAFT_COUNT = 20;
 const COLORS = ['#FF3333','#33FF33','#3355FF','#FFAA00','#FF33FF',
                 '#00CCCC','#FFDD44','#FF6644','#88FF88','#AA88FF',
-                '#FF88CC','#44DDFF','#CCAA33','#66FFCC','#DD6644'];
+                '#FF88CC','#44DDFF','#CCAA33','#66FFCC','#DD6644',
+                '#FF3333','#33FF33','#3355FF','#FFAA00','#FF33FF'];
 const TRAIL_LENGTH = 70;
 
 // ---------------------------------------------------------------- three.js
@@ -336,8 +337,10 @@ class Aircraft {
 
     // --- yuka vehicle ---
     const v = new YUKA.Vehicle();
-    v.maxSpeed = 15;
-    v.maxForce = 80;
+    this.cruiseSpeed = THREE.MathUtils.randFloat(8, 18);
+    this.minSpeed = this.cruiseSpeed * 0.45;
+    v.maxSpeed = this.cruiseSpeed;
+    v.maxForce = THREE.MathUtils.randFloat(60, 100);
     v.mass = 1;
     v.boundingRadius = 3;
     v.updateNeighborhood = true;
@@ -353,7 +356,9 @@ class Aircraft {
       THREE.MathUtils.randFloatSpread(2),
       THREE.MathUtils.randFloatSpread(0.6),
       THREE.MathUtils.randFloatSpread(2)
-    ).normalize().multiplyScalar(10);
+    ).normalize().multiplyScalar(
+      THREE.MathUtils.randFloat(this.minSpeed, this.cruiseSpeed)
+    );
 
     const wander = new YUKA.WanderBehavior();
     wander.radius = 6; wander.distance = 12; wander.jitter = 4;
@@ -363,7 +368,7 @@ class Aircraft {
     separation.weight = 2;
 
     const alignment = new YUKA.AlignmentBehavior();
-    alignment.weight = 0.5;
+    alignment.weight = 0.15;
 
     const cohesion = new YUKA.CohesionBehavior();
     cohesion.weight = 0.12;
@@ -439,12 +444,20 @@ aircraftList.forEach(a => {
   const btn = document.createElement('button');
   btn.style.background = a.colorHex;
   btn.style.color = a.colorHex;
-  btn.title = `Follow Aircraft #${a.index}`;
+  btn.title = `Follow Aircraft #${a.index} (cruise ${a.cruiseSpeed.toFixed(0)})`;
   btn.setAttribute('aria-label', btn.title);
   btn.addEventListener('click', e => { e.stopPropagation(); follow(a); });
   fleetEl.appendChild(btn);
   a.fleetButton = btn;
 });
+
+function updateTrackingPanel(aircraft) {
+  const speed = aircraft.vehicle.getSpeed().toFixed(1);
+  trackingEl.innerHTML =
+    `<span class="swatch" style="background:${aircraft.colorHex};color:${aircraft.colorHex}"></span>` +
+    `Tracking: Aircraft #${aircraft.index}<br>` +
+    `Speed ${speed} / ${aircraft.cruiseSpeed.toFixed(0)}`;
+}
 
 function follow(aircraft) {
   if (followTarget) {
@@ -455,9 +468,7 @@ function follow(aircraft) {
   aircraft.setHighlighted(true);
   aircraft.fleetButton.classList.add('active');
   controls.enabled = false;
-  trackingEl.innerHTML =
-    `<span class="swatch" style="background:${aircraft.colorHex};color:${aircraft.colorHex}"></span>` +
-    `Tracking: Aircraft #${aircraft.index}`;
+  updateTrackingPanel(aircraft);
 }
 
 function release() {
@@ -541,12 +552,13 @@ function animate() {
     }
     // Keep a minimum airspeed so aircraft never hover in place
     const speed = v.getSpeed();
-    if (speed > 0.001 && speed < 6) v.velocity.multiplyScalar(6 / speed);
+    if (speed > 0.001 && speed < a.minSpeed) v.velocity.multiplyScalar(a.minSpeed / speed);
 
     a.updateTrail();
   }
 
   if (followTarget) {
+    updateTrackingPanel(followTarget);
     const g = followTarget.group;
     g.matrix.decompose(_pos, _quat, _scale);
     _offset.set(0, followDistance * 0.3, -followDistance).applyQuaternion(_quat);
