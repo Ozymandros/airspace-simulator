@@ -41,6 +41,8 @@
   #fleet button:hover { transform: scale(1.25); }
   #fleet button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   #fleet button.active { box-shadow: 0 0 8px 2px currentColor; transform: scale(1.25); }
+  #sim-status { color: var(--text); font-size: 12px; margin-top: 6px; }
+  #sim-status.paused { color: #ffaa44; }
   @media (prefers-reduced-motion: reduce) {
     #fleet button { transition: none; }
   }
@@ -51,6 +53,8 @@
   <h1>Airspace Simulator</h1>
   <p>Click an aircraft to follow &ndash; ESC to release</p>
   <p>Drag to orbit &middot; right-drag to pan &middot; wheel to zoom</p>
+  <p>Space pause &middot; keys <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> time scale</p>
+  <p id="sim-status">Running &middot; 1&times;</p>
   <p id="tracking"></p>
   <div id="fleet" aria-label="Select an aircraft to follow"></div>
 </div>
@@ -590,7 +594,26 @@ renderer.domElement.addEventListener('click', e => {
 
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') release();
+  if (e.code === 'Space') {
+    e.preventDefault();
+    simPaused = !simPaused;
+    updateSimStatus();
+  }
+  if (e.key === '1' || e.key === '2' || e.key === '4') {
+    timeScale = Number(e.key);
+    updateSimStatus();
+  }
 });
+
+// ---------------------------------------------------------------- simulation time
+let simPaused = false;
+let timeScale = 1;
+const simStatusEl = document.getElementById('sim-status');
+
+function updateSimStatus() {
+  simStatusEl.textContent = `${simPaused ? 'Paused' : 'Running'} · ${timeScale}×`;
+  simStatusEl.classList.toggle('paused', simPaused);
+}
 
 // Wheel adjusts follow distance while tracking (OrbitControls is disabled then)
 renderer.domElement.addEventListener('wheel', e => {
@@ -611,28 +634,32 @@ function animate() {
   requestAnimationFrame(animate);
 
   const delta = Math.min(time.update().getDelta(), 0.1);
-  entityManager.update(delta);
+  const simDelta = simPaused ? 0 : delta * timeScale;
+
+  entityManager.update(simDelta);
 
   for (const c of clouds) {
-    c.position.x += c.userData.speed * delta;
+    c.position.x += c.userData.speed * simDelta;
     if (c.position.x > 550) c.position.x = -550;
   }
 
   for (const a of aircraftList) {
     const v = a.vehicle;
 
-    // Safety net: hard clamp inside the box and reflect velocity at walls
-    for (const axis of ['x', 'y', 'z']) {
-      const limit = HALF - 2;
-      if (v.position[axis] > limit) { v.position[axis] = limit; if (v.velocity[axis] > 0) v.velocity[axis] *= -0.5; }
-      if (v.position[axis] < -limit) { v.position[axis] = -limit; if (v.velocity[axis] < 0) v.velocity[axis] *= -0.5; }
-    }
-    // Keep a minimum airspeed so aircraft never hover in place
-    const speed = v.getSpeed();
-    if (speed > 0.001 && speed < a.minSpeed) v.velocity.multiplyScalar(a.minSpeed / speed);
+    if (simDelta > 0) {
+      // Safety net: hard clamp inside the box and reflect velocity at walls
+      for (const axis of ['x', 'y', 'z']) {
+        const limit = HALF - 2;
+        if (v.position[axis] > limit) { v.position[axis] = limit; if (v.velocity[axis] > 0) v.velocity[axis] *= -0.5; }
+        if (v.position[axis] < -limit) { v.position[axis] = -limit; if (v.velocity[axis] < 0) v.velocity[axis] *= -0.5; }
+      }
+      // Keep a minimum airspeed so aircraft never hover in place
+      const speed = v.getSpeed();
+      if (speed > 0.001 && speed < a.minSpeed) v.velocity.multiplyScalar(a.minSpeed / speed);
 
-    a.propeller.rotation.z += speed * 1.4 * delta;
-    a.updateTrail();
+      a.propeller.rotation.z += speed * 1.4 * simDelta;
+      a.updateTrail();
+    }
   }
 
   if (followTarget) {
