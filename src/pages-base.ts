@@ -6,7 +6,10 @@ export function pagesBase(env: {
   const viteBasePath = env.viteBasePath ?? process.env.VITE_BASE_PATH;
   if (viteBasePath) return viteBasePath;
 
-  const repo = (env.githubRepository ?? process.env.GITHUB_REPOSITORY)?.split('/')[1];
+  const githubRepository =
+    'githubRepository' in env ? env.githubRepository : process.env.GITHUB_REPOSITORY;
+
+  const repo = githubRepository?.split('/')[1];
   if (!repo || repo.endsWith('.github.io')) return '/';
   return `/${repo}/`;
 }

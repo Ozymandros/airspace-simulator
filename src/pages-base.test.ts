@@ -3,7 +3,18 @@ import { pagesBase } from './pages-base';
 
 describe('pagesBase', () => {
   it('returns root path for local development', () => {
-    expect(pagesBase({})).toBe('/');
+    expect(pagesBase({ githubRepository: undefined })).toBe('/');
+  });
+
+  it('uses GITHUB_REPOSITORY from the environment when not overridden', () => {
+    const prev = process.env.GITHUB_REPOSITORY;
+    process.env.GITHUB_REPOSITORY = 'Ozymandros/airspace-simulator';
+    try {
+      expect(pagesBase()).toBe('/airspace-simulator/');
+    } finally {
+      if (prev === undefined) delete process.env.GITHUB_REPOSITORY;
+      else process.env.GITHUB_REPOSITORY = prev;
+    }
   });
 
   it('uses an explicit VITE_BASE_PATH when provided', () => {
