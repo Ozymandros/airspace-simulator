@@ -11,7 +11,7 @@ services:
     environment:
       CHOKIDAR_USEPOLLING: "true"
       DOCKER: "true"
-    command: npm run dev
+    command: pnpm run dev
 
   web:
     build:

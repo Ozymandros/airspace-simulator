@@ -1,10 +1,13 @@
 @echo off
 cd /d "%~dp0"
 
+call corepack enable >nul 2>&1
+
 if not exist node_modules (
-  echo Installing dependencies...
-  call npm install
+  echo Installing dependencies with pnpm...
+  call pnpm install
   if errorlevel 1 exit /b 1
 )
 
-npm run dev & index.html
+echo Open http://localhost:8080 in your browser
+pnpm run dev

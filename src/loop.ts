@@ -4,6 +4,15 @@ import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { HALF } from './constants';
 import type { Aircraft } from './aircraft';
 import type { CloudGroup } from './landscape';
+import {
+  advanceCloudX,
+  capDelta,
+  clampVehicleToAirspace,
+  computeSimDelta,
+  enforceMinSpeed,
+  propellerDelta,
+  scaleVelocityToSpeed,
+} from './simulation';
 import { updateTrackingPanel, type FollowState } from './ui';
 
 const _pos = new THREE.Vector3();
@@ -32,38 +41,28 @@ export function startLoop(ctx: LoopContext): void {
   function animate(): void {
     requestAnimationFrame(animate);
 
-    const delta = Math.min(time.update().getDelta(), 0.1);
-    const simDelta = state.simPaused ? 0 : delta * state.timeScale;
+    const delta = capDelta(time.update().getDelta());
+    const simDelta = computeSimDelta(delta, state.simPaused, state.timeScale);
 
     entityManager.update(simDelta);
 
     for (const c of clouds) {
-      c.position.x += c.userData.speed * simDelta;
-      if (c.position.x > 550) c.position.x = -550;
+      c.position.x = advanceCloudX(c.position.x, c.userData.speed, simDelta);
     }
 
     for (const a of aircraftList) {
       const v = a.vehicle;
 
       if (simDelta > 0) {
-        for (const axis of ['x', 'y', 'z'] as const) {
-          const limit = HALF - 2;
-          if (v.position[axis] > limit) {
-            v.position[axis] = limit;
-            if (v.velocity[axis] > 0) v.velocity[axis] *= -0.5;
-          }
-          if (v.position[axis] < -limit) {
-            v.position[axis] = -limit;
-            if (v.velocity[axis] < 0) v.velocity[axis] *= -0.5;
-          }
-        }
+        clampVehicleToAirspace(v.position, v.velocity, HALF);
 
         const speed = v.getSpeed();
-        if (speed > 0.001 && speed < a.minSpeed) {
-          v.velocity.multiplyScalar(a.minSpeed / speed);
+        const targetSpeed = enforceMinSpeed(speed, a.minSpeed);
+        if (targetSpeed !== speed) {
+          scaleVelocityToSpeed(v.velocity, speed, targetSpeed);
         }
 
-        a.propeller.rotation.z += speed * 1.4 * simDelta;
+        a.propeller.rotation.z += propellerDelta(speed, simDelta);
         a.updateTrail();
       }
     }

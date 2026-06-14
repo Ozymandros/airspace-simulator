@@ -10,7 +10,7 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "corepack enable && pnpm install",
   "customizations": {
     "vscode": {
       "extensions": []

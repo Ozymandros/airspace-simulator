@@ -26,11 +26,13 @@ Double-click `serve.bat` — it installs dependencies on first run and starts th
 
 ### Any platform
 
+Requires [pnpm](https://pnpm.io/) 9+ (Node.js 18+ ships with Corepack: `corepack enable`).
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/airspace-simulator.git
+git clone https://github.com/Ozymandros/airspace-simulator.git
 cd airspace-simulator
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Open `http://localhost:8080` in a modern browser (Chrome, Firefox, Edge, or Safari).
@@ -69,13 +71,37 @@ docker run --rm -p 8081:80 airspace-simulator
 
 The dev container uses the `dev` service from `docker-compose.yml` with your workspace mounted at `/workspace`.
 
+### GitHub Pages
+
+Live demo: **https://ozymandros.github.io/airspace-simulator/**
+
+Pushes to `main` deploy automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+
+**One-time repo setup:**
+
+1. Open **Settings → Pages** in the GitHub repository.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+
+**Test the Pages build locally:**
+
+```bash
+pnpm run preview:pages
+```
+
+Open `http://localhost:8080/airspace-simulator/` (note the repo subpath).
+
 ## Scripts
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start Vite dev server on port 8080 |
-| `npm run build` | Type-check and build for production (`dist/`) |
-| `npm run preview` | Preview the production build locally |
+| `pnpm run dev` | Start Vite dev server on port 8080 |
+| `pnpm run build` | Type-check and build for production (`dist/`) |
+| `pnpm run build:pages` | Build with `/airspace-simulator/` base path (same as CI) |
+| `pnpm run preview` | Preview the production build locally |
+| `pnpm run preview:pages` | Build and preview the GitHub Pages bundle locally |
+| `pnpm test` | Run unit tests |
+| `pnpm run test:coverage` | Run tests with coverage report |
+| `pnpm run test:watch` | Run tests in watch mode |
 
 ## Controls
 
@@ -111,39 +137,58 @@ Each aircraft is a Yuka `Vehicle` with combined steering behaviors: wander, sepa
 
 The operational volume is a **200-unit cube** centered at the origin. Terrain directly beneath stays flat so mountains never intrude into the box.
 
+### Tests
+
+Unit tests cover simulation math, steering behaviors, terrain generation, UI state, and GitHub Pages base-path logic using [Vitest](https://vitest.dev/). Three.js rendering and the main animation loop are intentionally excluded — those are exercised manually in the browser.
+
+```bash
+pnpm test
+pnpm run test:coverage
+```
+
+Coverage thresholds apply to the pure-logic modules in `src/simulation.ts`, `src/behaviors.ts`, `src/terrain.ts`, `src/ui.ts`, and related helpers.
+
 ## Project Structure
 
 ```
 airspace-simulator/
 ├── .devcontainer/
 │   └── devcontainer.json   # VS Code / Cursor dev container config
+├── .github/workflows/
+│   └── deploy.yml          # GitHub Pages deployment
 ├── docker/
 │   └── nginx.conf          # Production static file server
 ├── index.html              # App shell
 ├── Dockerfile              # Multi-stage: development, build, production
 ├── docker-compose.yml      # dev + web services
 ├── package.json
-├── serve.bat               # Windows one-click dev server
+├── pnpm-lock.yaml
+├── .npmrc                    # pnpm settings
+├── serve.bat                 # Windows one-click dev server
 ├── tsconfig.json
 ├── vite.config.ts
 ├── src/
 │   ├── main.ts             # Entry point
 │   ├── styles.css          # UI styles
 │   ├── constants.ts        # Shared constants
+│   ├── simulation.ts       # Pure simulation helpers (tested)
+│   ├── terrain.ts          # Procedural terrain height (tested)
+│   ├── pages-base.ts       # GitHub Pages base path (tested)
 │   ├── scene.ts            # Scene, camera, renderer, lights
-│   ├── landscape.ts        # Terrain, trees, houses, clouds
+│   ├── landscape.ts        # Terrain mesh, trees, houses, clouds
 │   ├── behaviors.ts        # Yuka steering behaviors
 │   ├── aircraft.ts         # Aircraft model and AI setup
 │   ├── sync.ts             # Yuka → Three.js transform sync
 │   ├── ui.ts               # Fleet panel, follow mode, sim status
 │   ├── input.ts            # Keyboard, mouse picking, wheel
-│   └── loop.ts             # Animation loop
+│   ├── loop.ts             # Animation loop
+│   └── test/setup.ts       # Vitest DOM setup
 └── README.md
 ```
 
 ## Requirements
 
-- Node.js 18+ (for local development), **or** Docker / Dev Containers
+- Node.js 18+ with [pnpm](https://pnpm.io/) 9 (`corepack enable`), **or** Docker / Dev Containers
 - A modern browser with WebGL support
 
 ## Browser Compatibility

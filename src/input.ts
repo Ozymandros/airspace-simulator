@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Aircraft } from './aircraft';
+import { clampFollowDistance } from './simulation';
 import {
   followAircraft,
   releaseFollow,
@@ -64,11 +65,7 @@ export function bindInput(
     (e) => {
       if (!state.followTarget) return;
       e.preventDefault();
-      state.followDistance = THREE.MathUtils.clamp(
-        state.followDistance + e.deltaY * 0.02,
-        6,
-        90,
-      );
+      state.followDistance = clampFollowDistance(state.followDistance + e.deltaY * 0.02);
     },
     { passive: false },
   );

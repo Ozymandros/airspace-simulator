@@ -1,9 +1,11 @@
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Aircraft } from './aircraft';
 
-const trackingEl = document.getElementById('tracking')!;
-const fleetEl = document.getElementById('fleet')!;
-const simStatusEl = document.getElementById('sim-status')!;
+function requireEl<T extends HTMLElement>(id: string): T {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing #${id} in document`);
+  return el as T;
+}
 
 export interface FollowState {
   followTarget: Aircraft | null;
@@ -22,6 +24,7 @@ export function createFollowState(): FollowState {
 }
 
 export function buildFleetPanel(aircraftList: Aircraft[], follow: (aircraft: Aircraft) => void): void {
+  const fleetEl = requireEl<HTMLDivElement>('fleet');
   aircraftList.forEach((a) => {
     const btn = document.createElement('button');
     btn.style.background = a.colorHex;
@@ -38,6 +41,7 @@ export function buildFleetPanel(aircraftList: Aircraft[], follow: (aircraft: Air
 }
 
 export function updateTrackingPanel(aircraft: Aircraft): void {
+  const trackingEl = requireEl<HTMLParagraphElement>('tracking');
   const speed = aircraft.vehicle.getSpeed().toFixed(1);
   trackingEl.innerHTML =
     `<span class="swatch" style="background:${aircraft.colorHex};color:${aircraft.colorHex}"></span>` +
@@ -46,6 +50,7 @@ export function updateTrackingPanel(aircraft: Aircraft): void {
 }
 
 export function updateSimStatus(state: FollowState): void {
+  const simStatusEl = requireEl<HTMLParagraphElement>('sim-status');
   simStatusEl.textContent = `${state.simPaused ? 'Paused' : 'Running'} · ${state.timeScale}×`;
   simStatusEl.classList.toggle('paused', state.simPaused);
 }
@@ -77,5 +82,5 @@ export function releaseFollow(state: FollowState, controls: OrbitControls): void
   );
   state.followTarget = null;
   controls.enabled = true;
-  trackingEl.textContent = '';
+  requireEl<HTMLParagraphElement>('tracking').textContent = '';
 }

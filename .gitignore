@@ -1,4 +1,7 @@
 node_modules/
 dist/
+coverage/
+package-lock.json
+pnpm-debug.log*
 *.local
 .DS_Store
