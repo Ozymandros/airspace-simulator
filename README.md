@@ -1,6 +1,6 @@
 # 3D Airspace Simulator
 
-A browser-based 3D airspace simulation where twenty autonomous classical biplanes fly inside a bounded volume over procedural terrain. Built as a single self-contained HTML file using [Three.js](https://threejs.org/) for rendering and [Yuka](https://mugen87.github.io/yuka/) for steering and flocking behavior.
+A browser-based 3D airspace simulation where twenty autonomous classical biplanes fly inside a bounded volume over procedural terrain. Built with [Three.js](https://threejs.org/) for rendering and [Yuka](https://mugen87.github.io/yuka/) for steering and flocking behavior.
 
 ![3D Airspace Simulator](https://img.shields.io/badge/runtime-browser-blue) ![Three.js](https://img.shields.io/badge/Three.js-0.160.0-black) ![Yuka](https://img.shields.io/badge/Yuka-0.7.8-green)
 
@@ -17,33 +17,65 @@ A browser-based 3D airspace simulation where twenty autonomous classical biplane
 - **Camera modes** — free orbit/pan/zoom, or follow any aircraft with adjustable chase distance
 - **Live telemetry** — speed readout while tracking an aircraft
 - **Pause and time scale** — freeze the simulation or run at 1×, 2×, or 4× speed
-- **Zero build step** — no npm install, bundler, or compile step required
 
 ## Quick Start
 
-The simulator loads ES modules from a CDN, so it must be served over HTTP (opening the file directly with `file://` may fail in some browsers).
+### Windows
 
-1. Clone the repository:
+Double-click `serve.bat` — it installs dependencies on first run and starts the dev server.
 
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/airspace-simulator.git
-   cd airspace-simulator
-   ```
+### Any platform
 
-2. Start a local static server from the project directory. Any of these work:
+```bash
+git clone https://github.com/YOUR_USERNAME/airspace-simulator.git
+cd airspace-simulator
+npm install
+npm run dev
+```
 
-   ```bash
-   # Python
-   python -m http.server 8080
+Open `http://localhost:8080` in a modern browser (Chrome, Firefox, Edge, or Safari).
 
-   # Node (npx, no install required)
-   npx serve .
+### Docker
 
-   # PHP
-   php -S localhost:8080
-   ```
+**Development** (Vite with hot reload):
 
-3. Open `http://localhost:8080/airspace-simulator.html` in a modern browser (Chrome, Firefox, Edge, or Safari).
+```bash
+docker compose up dev
+```
+
+Open `http://localhost:8080`.
+
+**Production** (nginx serving built assets):
+
+```bash
+docker compose up web --build
+```
+
+Open `http://localhost:8081`.
+
+Build the production image manually:
+
+```bash
+docker build --target production -t airspace-simulator .
+docker run --rm -p 8081:80 airspace-simulator
+```
+
+### Dev Container (VS Code / Cursor)
+
+1. Open the repository in VS Code or Cursor.
+2. Run **Dev Containers: Reopen in Container** from the command palette.
+3. The `dev` container starts the Vite dev server automatically.
+4. Open the forwarded port **8080** when prompted.
+
+The dev container uses the `dev` service from `docker-compose.yml` with your workspace mounted at `/workspace`.
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start Vite dev server on port 8080 |
+| `npm run build` | Type-check and build for production (`dist/`) |
+| `npm run preview` | Preview the production build locally |
 
 ## Controls
 
@@ -59,7 +91,7 @@ The simulator loads ES modules from a CDN, so it must be served over HTTP (openi
 | **1 / 2 / 4** | Set time scale to 1×, 2×, or 4× |
 | **Fleet dots** (top-left panel) | Select an aircraft to follow |
 
-While paused, aircraft and clouds freeze but you can still orbit the camera in free mode. The status line in the top-left panel shows `Running · 1×` or `Paused · 2×`, etc.
+While paused, aircraft and clouds freeze but you can still orbit the camera in free mode.
 
 ## How It Works
 
@@ -68,48 +100,51 @@ While paused, aircraft and clouds freeze but you can still orbit the camera in f
 - Perspective camera with damped orbit controls
 - Procedural terrain mesh with vertex-colored grass, rock, and snow
 - Instanced trees and houses scattered outside the airspace footprint
-- Low-poly classical biplane models — fuselage, dual wings, struts, empennage, landing gear, and spinning propellers
-- Emissive highlighting on the tracked aircraft
+- Low-poly classical biplane models with emissive highlighting when tracked
 - Line-based flight trails and soft fog for depth
 
 ### Steering (Yuka)
 
-Each aircraft is a Yuka `Vehicle` with combined steering behaviors:
-
-| Behavior | Purpose |
-| --- | --- |
-| **Wander** | Exploratory horizontal movement |
-| **Separation** | Avoid crowding nearby aircraft |
-| **Alignment** | Match heading with neighbors (light weight to preserve speed variation) |
-| **Cohesion** | Stay loosely grouped with the flock |
-| **Containment** | Smooth inward push near airspace walls |
-| **Altitude wander** | Gradual vertical cruise-altitude changes |
-
-Each plane gets a random cruise speed and a per-aircraft minimum airspeed floor. A `Smoother` on orientation produces banking-style turns instead of instant snaps. Propeller rotation is tied to live airspeed.
+Each aircraft is a Yuka `Vehicle` with combined steering behaviors: wander, separation, alignment, cohesion, containment, and altitude wander. Each plane gets a random cruise speed and per-aircraft minimum airspeed floor.
 
 ### Airspace
 
-The operational volume is a **200-unit cube** centered at the origin. Terrain directly beneath stays flat so mountains never intrude into the box. Clouds drift horizontally above the scene.
+The operational volume is a **200-unit cube** centered at the origin. Terrain directly beneath stays flat so mountains never intrude into the box.
 
 ## Project Structure
 
 ```
 airspace-simulator/
-├── airspace-simulator.html   # Complete app (HTML, CSS, and JavaScript)
+├── .devcontainer/
+│   └── devcontainer.json   # VS Code / Cursor dev container config
+├── docker/
+│   └── nginx.conf          # Production static file server
+├── index.html              # App shell
+├── Dockerfile              # Multi-stage: development, build, production
+├── docker-compose.yml      # dev + web services
+├── package.json
+├── serve.bat               # Windows one-click dev server
+├── tsconfig.json
+├── vite.config.ts
+├── src/
+│   ├── main.ts             # Entry point
+│   ├── styles.css          # UI styles
+│   ├── constants.ts        # Shared constants
+│   ├── scene.ts            # Scene, camera, renderer, lights
+│   ├── landscape.ts        # Terrain, trees, houses, clouds
+│   ├── behaviors.ts        # Yuka steering behaviors
+│   ├── aircraft.ts         # Aircraft model and AI setup
+│   ├── sync.ts             # Yuka → Three.js transform sync
+│   ├── ui.ts               # Fleet panel, follow mode, sim status
+│   ├── input.ts            # Keyboard, mouse picking, wheel
+│   └── loop.ts             # Animation loop
 └── README.md
 ```
 
-All application code lives in `airspace-simulator.html`. Dependencies are loaded at runtime via an import map:
-
-- `three@0.160.0` — WebGL rendering
-- `three/addons/` — OrbitControls
-- `yuka@0.7.8` — entity/steering framework
-
 ## Requirements
 
-- A modern browser with WebGL and ES module support
-- Network access on first load (CDN dependencies)
-- A local HTTP server to run the file
+- Node.js 18+ (for local development), **or** Docker / Dev Containers
+- A modern browser with WebGL support
 
 ## Browser Compatibility
 
