@@ -139,14 +139,14 @@ The operational volume is a **200-unit cube** centered at the origin. Terrain di
 
 ### Tests
 
-Unit tests cover simulation math, steering behaviors, terrain generation, UI state, and GitHub Pages base-path logic using [Vitest](https://vitest.dev/). Three.js rendering and the main animation loop are intentionally excluded — those are exercised manually in the browser.
+Unit tests cover simulation math, steering behaviors, terrain generation, UI state, keyboard input (pause, time scale, manual flight), variable aircraft speeds, and GitHub Pages base-path logic using [Vitest](https://vitest.dev/). Three.js rendering and the main animation loop are intentionally excluded — those are exercised manually in the browser.
 
 ```bash
 pnpm test
 pnpm run test:coverage
 ```
 
-Coverage thresholds apply to the pure-logic modules in `src/simulation.ts`, `src/behaviors.ts`, `src/terrain.ts`, `src/ui.ts`, and related helpers.
+Coverage thresholds apply to the pure-logic modules in `src/simulation.ts`, `src/behaviors.ts`, `src/terrain.ts`, `src/ui.ts`, `src/input.ts`, `src/aircraft-speed.ts`, and related helpers.
 
 ## Project Structure
 
@@ -172,6 +172,9 @@ airspace-simulator/
 │   ├── styles.css          # UI styles
 │   ├── constants.ts        # Shared constants
 │   ├── simulation.ts       # Pure simulation helpers (tested)
+│   ├── manual-steer.ts     # WASD / arrow key mapping (tested)
+│   ├── manual-steer-3d.ts  # 3D velocity steering (tested)
+│   ├── aircraft-speed.ts   # Per-plane cruise speed rolls (tested)
 │   ├── terrain.ts          # Procedural terrain height (tested)
 │   ├── pages-base.ts       # GitHub Pages base path (tested)
 │   ├── scene.ts            # Scene, camera, renderer, lights

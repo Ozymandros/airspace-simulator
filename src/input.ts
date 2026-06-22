@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Aircraft } from './aircraft';
 import { clampFollowDistance } from './simulation';
+import { computeManualInput } from './manual-steer';
 import {
   followAircraft,
   releaseFollow,
@@ -50,17 +51,7 @@ export function bindInput(
   const steerKeys = new Set<string>();
 
   const updateManualInput = () => {
-    if (!state.followTarget) {
-      state.manualInput.pitch = 0;
-      state.manualInput.yaw = 0;
-      return;
-    }
-    state.manualInput.yaw =
-      (steerKeys.has('KeyA') || steerKeys.has('ArrowLeft') ? -1 : 0) +
-      (steerKeys.has('KeyD') || steerKeys.has('ArrowRight') ? 1 : 0);
-    state.manualInput.pitch =
-      (steerKeys.has('KeyW') || steerKeys.has('ArrowUp') ? -1 : 0) +
-      (steerKeys.has('KeyS') || steerKeys.has('ArrowDown') ? 1 : 0);
+    state.manualInput = computeManualInput(steerKeys, Boolean(state.followTarget));
   };
 
   window.addEventListener('keydown', (e) => {

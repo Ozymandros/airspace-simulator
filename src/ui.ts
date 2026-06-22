@@ -1,5 +1,6 @@
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Aircraft } from './aircraft';
+import type { ManualInput } from './manual-steer';
 
 function requireEl<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -7,10 +8,7 @@ function requireEl<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
-export interface ManualInput {
-  pitch: number; // -1 (up) … +1 (down)
-  yaw: number;   // -1 (left) … +1 (right)
-}
+export type { ManualInput };
 
 export interface FollowState {
   followTarget: Aircraft | null;
@@ -88,6 +86,7 @@ export function releaseFollow(state: FollowState, controls: OrbitControls): void
     state.followTarget.vehicle.position.z,
   );
   state.followTarget = null;
+  state.manualInput = { pitch: 0, yaw: 0 };
   controls.enabled = true;
   requireEl<HTMLParagraphElement>('tracking').textContent = '';
 }

@@ -34,26 +34,33 @@ function mockControls(): OrbitControls {
 }
 
 describe('createFollowState', () => {
-  it('starts in running mode at 1x speed', () => {
+  it('starts in running mode at 1x speed with neutral manual input', () => {
     expect(createFollowState()).toEqual({
       followTarget: null,
       followDistance: 15,
       simPaused: false,
       timeScale: 1,
+      manualInput: { pitch: 0, yaw: 0 },
     });
   });
 });
 
 describe('updateSimStatus', () => {
+  const baseState = {
+    followTarget: null,
+    followDistance: 15,
+    manualInput: { pitch: 0, yaw: 0 },
+  };
+
   it('shows running state and time scale', () => {
-    updateSimStatus({ followTarget: null, followDistance: 15, simPaused: false, timeScale: 2 });
+    updateSimStatus({ ...baseState, simPaused: false, timeScale: 2 });
     const el = document.getElementById('sim-status');
     expect(el?.textContent).toBe('Running · 2×');
     expect(el?.classList.contains('paused')).toBe(false);
   });
 
   it('shows paused state with highlight class', () => {
-    updateSimStatus({ followTarget: null, followDistance: 15, simPaused: true, timeScale: 4 });
+    updateSimStatus({ ...baseState, simPaused: true, timeScale: 4 });
     const el = document.getElementById('sim-status');
     expect(el?.textContent).toBe('Paused · 4×');
     expect(el?.classList.contains('paused')).toBe(true);
@@ -140,6 +147,7 @@ describe('releaseFollow', () => {
     expect(aircraft.setHighlighted).toHaveBeenCalledWith(false);
     expect(controls.enabled).toBe(true);
     expect(controls.target.set).toHaveBeenCalledWith(1, 2, 3);
+    expect(state.manualInput).toEqual({ pitch: 0, yaw: 0 });
     expect(document.getElementById('tracking')?.textContent).toBe('');
   });
 });

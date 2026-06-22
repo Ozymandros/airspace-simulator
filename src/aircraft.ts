@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import * as YUKA from 'yuka';
 import { TRAIL_LENGTH } from './constants';
 import { ContainmentBehavior, AltitudeWanderBehavior } from './behaviors';
+import { createAircraftSpeedProfile } from './aircraft-speed';
 import { syncEntity } from './sync';
 
 export class Aircraft {
@@ -125,10 +126,11 @@ export class Aircraft {
     this.group = group;
 
     const v = new YUKA.Vehicle();
-    this.cruiseSpeed = THREE.MathUtils.randFloat(8, 18);
-    this.minSpeed = this.cruiseSpeed * 0.45;
+    const speedProfile = createAircraftSpeedProfile(THREE.MathUtils.randFloat.bind(THREE.MathUtils));
+    this.cruiseSpeed = speedProfile.cruiseSpeed;
+    this.minSpeed = speedProfile.minSpeed;
     v.maxSpeed = this.cruiseSpeed;
-    v.maxForce = THREE.MathUtils.randFloat(60, 100);
+    v.maxForce = speedProfile.maxForce;
     v.mass = 1;
     v.boundingRadius = 3.5;
     v.updateNeighborhood = true;
@@ -147,7 +149,7 @@ export class Aircraft {
         THREE.MathUtils.randFloatSpread(2),
       )
       .normalize()
-      .multiplyScalar(THREE.MathUtils.randFloat(this.minSpeed, this.cruiseSpeed));
+      .multiplyScalar(speedProfile.startSpeed);
 
     const wander = new YUKA.WanderBehavior();
     wander.radius = 6;
