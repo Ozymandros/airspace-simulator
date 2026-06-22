@@ -21,6 +21,12 @@ const _scale = new THREE.Vector3();
 const _offset = new THREE.Vector3();
 const _desired = new THREE.Vector3();
 const _lookAt = new THREE.Vector3();
+const _vel = new THREE.Vector3();
+const _right = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
+const _yawQ = new THREE.Quaternion();
+const _pitchQ = new THREE.Quaternion();
+const STEER_RATE = 1.4; // radians per second
 
 export interface LoopContext {
   scene: THREE.Scene;
@@ -64,6 +70,20 @@ export function startLoop(ctx: LoopContext): void {
 
         a.propeller.rotation.z += propellerDelta(speed, simDelta);
         a.updateTrail();
+      }
+    }
+
+    if (state.followTarget && simDelta > 0 && (state.manualInput.yaw || state.manualInput.pitch)) {
+      const v = state.followTarget.vehicle;
+      const speed = v.getSpeed();
+      if (speed > 0.001) {
+        _vel.set(v.velocity.x, v.velocity.y, v.velocity.z);
+        _yawQ.setFromAxisAngle(_up, -state.manualInput.yaw * STEER_RATE * simDelta);
+        _vel.applyQuaternion(_yawQ);
+        _right.crossVectors(_vel, _up).normalize();
+        _pitchQ.setFromAxisAngle(_right, state.manualInput.pitch * STEER_RATE * simDelta);
+        _vel.applyQuaternion(_pitchQ);
+        v.velocity.set(_vel.x, _vel.y, _vel.z);
       }
     }
 

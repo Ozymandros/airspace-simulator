@@ -47,6 +47,22 @@ export function bindInput(
     else release();
   });
 
+  const steerKeys = new Set<string>();
+
+  const updateManualInput = () => {
+    if (!state.followTarget) {
+      state.manualInput.pitch = 0;
+      state.manualInput.yaw = 0;
+      return;
+    }
+    state.manualInput.yaw =
+      (steerKeys.has('KeyA') || steerKeys.has('ArrowLeft') ? -1 : 0) +
+      (steerKeys.has('KeyD') || steerKeys.has('ArrowRight') ? 1 : 0);
+    state.manualInput.pitch =
+      (steerKeys.has('KeyW') || steerKeys.has('ArrowUp') ? -1 : 0) +
+      (steerKeys.has('KeyS') || steerKeys.has('ArrowDown') ? 1 : 0);
+  };
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') release();
     if (e.code === 'Space') {
@@ -58,6 +74,16 @@ export function bindInput(
       state.timeScale = Number(e.key);
       updateSimStatus(state);
     }
+    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'].includes(e.code)) {
+      if (state.followTarget) e.preventDefault();
+      steerKeys.add(e.code);
+      updateManualInput();
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    steerKeys.delete(e.code);
+    updateManualInput();
   });
 
   renderer.domElement.addEventListener(

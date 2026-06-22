@@ -7,11 +7,17 @@ function requireEl<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
+export interface ManualInput {
+  pitch: number; // -1 (up) … +1 (down)
+  yaw: number;   // -1 (left) … +1 (right)
+}
+
 export interface FollowState {
   followTarget: Aircraft | null;
   followDistance: number;
   simPaused: boolean;
   timeScale: number;
+  manualInput: ManualInput;
 }
 
 export function createFollowState(): FollowState {
@@ -20,6 +26,7 @@ export function createFollowState(): FollowState {
     followDistance: 15,
     simPaused: false,
     timeScale: 1,
+    manualInput: { pitch: 0, yaw: 0 },
   };
 }
 

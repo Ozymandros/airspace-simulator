@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { pagesBase } from './src/pages-base';
 
 export default defineConfig({
-  base: pagesBase(),
+  base: process.env.NODE_ENV === 'production' ? pagesBase() : '/',
   server: {
     port: 8080,
     host: true,
